@@ -75,6 +75,14 @@ def obtener_calidad():
     return _llamar("GET", "/api/calidad")
 
 
+def obtener_series(rango="24h"):
+    return _llamar("GET", "/api/series", params={"rango": rango})
+
+
+def obtener_datos():
+    return _llamar("GET", "/api/datos")
+
+
 def obtener_inventario():
     return _llamar("GET", "/api/inventario")
 

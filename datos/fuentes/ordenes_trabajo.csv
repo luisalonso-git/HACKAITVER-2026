@@ -1,0 +1,15 @@
+id_ot,fecha,sku,tipo,cantidad,estado
+OT001,2026-11-03,SKU-003,reposicion,60,cerrada
+OT002,2026-11-05,SKU-002,reposicion,20,cerrada
+OT003,2026-11-09,SKU-004,reposicion,100,cerrada
+OT004,2026-11-10,SKU-001,reposicion,30,cerrada
+OT004,2026-11-10,SKU-001,reposicion,30,cerrada
+OT005,2026-11-11,SKU-002,reposicion,15,cerrada
+OT006,2026-11-12,SKU-003,reposicion,50,cerrada
+OT007,2026-11-13,SKU-004,reposicion,80,
+OT008,2026-11-16,SKU-001,reposicion,25,cerrada
+OT009,2026-11-17,SKU-003,reposicion,,abierta
+OT010,2026-11-18,SKU-002,reposicion,10,hecha
+OT011,2026-11-19,SKU-077,reposicion,15,abierta
+OT012,2026-11-20,SKU-001,reposicion,-3,abierta
+OT013,2026-11-12,SKU-003,reposicion,50,cerrada

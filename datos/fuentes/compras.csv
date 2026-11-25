@@ -1,0 +1,23 @@
+id_compra,fecha,proveedor,sku,descripcion,cantidad,costo_unitario
+C001,2026-11-02,Ferretera MX,SKU-001,Caja tornillería industrial M8,50,85.00
+C002,2026-11-02,ElectroSensores SA,SKU-002,Sensor inductivo NPN 12V,30,210.00
+C003,2026-11-03,Empaques del Golfo,SKU-003,Rollo cinta de empaque,60,32.50
+C004,2026-11-04,Ferretera MX,SKU-001,Caja tornillería industrial M8,40,85.00
+C005,2026-11-05,ElectroSensores SA,SKU-002,Sensor inductivo NPN 12V,20,210.00
+C006,2026-11-06,Empaques del Golfo,SKU-003,Rollo cinta de empaque,40,32.50
+C007,2026-11-09,Seguridad Industrial VR,SKU-004,Guantes de seguridad nitrilo,100,18.00
+C008,2026-11-10,Ferretera MX,SKU-001,Caja tornillería industrial M8,30,87.00
+C009,2026-11-11,ElectroSensores SA,SKU-002,Sensor inductivo NPN 12V,15,205.00
+C010,2026-11-12,Empaques del Golfo,SKU-003,Rollo cinta de empaque,50,33.00
+C011,2026-11-13,Seguridad Industrial VR,SKU-004,Guantes de seguridad nitrilo,80,18.00
+C011,2026-11-13,Seguridad Industrial VR,SKU-004,Guantes de seguridad nitrilo,80,18.00
+C012,2026-11-16,Ferretera MX,SKU-001,Caja tornillería industrial M8,25,86.00
+C013,2026-11-04,Ferretera MX,SKU-001,Caja tornillería industrial M8,40,85.00
+C014,2026-11-02,ferretera mx ,SKU-001,caja tornillería industrial m8 ,50,85.00
+C015,2026-11-17,,SKU-003,Rollo cinta de empaque,30,32.50
+C016,2026-11-18,ElectroSensores SA,SKU-002,Sensor inductivo NPN 12V,10,
+C017,2026-11-18,Seguridad Industrial VR,SKU-004,Guantes de seguridad nitrilo,50,-18.00
+C018,2027-03-15,Empaques del Golfo,SKU-003,Rollo cinta de empaque,20,33.00
+C019,19/11/2026,ElectroSensores SA,sku-002,Sensor inductivo NPN 12V,12,205.00
+C020,2026-11-20,Ferretera MX,SKU-001,Caja tornillería industrial M8,0,85.00
+C021,2026-11-23,Empaques del Golfo,SKU-003,Rollo cinta de empaque,45,33.00

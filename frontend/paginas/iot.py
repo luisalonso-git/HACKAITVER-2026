@@ -1,16 +1,18 @@
 import importlib.util
 import sys
+from html import escape
 
 import pandas as pd
 import streamlit as st
 
 import api
 import config
-from componentes import tabla_eventos
-from utils import ESCENARIOS_SIMULADOR, NOMBRE_ORIGEN, TIPOS_EVENTO, hora
+import graficas
+from componentes import estado_conexion, linea_eventos
+from estilo import encabezado, html, kpis, pildora, seccion, tarjeta
+from utils import ESCENARIOS_SIMULADOR, TIPOS_EVENTO, hora
 
-st.title("Estación IoT")
-st.caption("Eventos del acelerómetro (MPU6050) y de la báscula, simulados o físicos, según el contrato.")
+COLOR_ESTADO = {"OK": "verde", "SOSPECHOSO": "rojo", "PENDIENTE": "cian"}
 
 
 @st.cache_resource
@@ -26,56 +28,15 @@ def cargar_detector():
     return modulo
 
 
-# ---------------- Simulador ----------------
-st.subheader("Simulador de la estación")
+encabezado("Estación IoT", "Acelerómetro MPU6050 y báscula: eventos en vivo, simulador y parámetros del detector.",
+           seccion="Operación",
+           pildoras=estado_conexion(api.backend_activo(), config.RUTA_SIMULADOR.exists(), config.ESTACION))
+
 try:
     bultos = api.listar_bultos()
 except api.ErrorAPI as e:
     st.error(str(e))
     st.stop()
-
-with st.form("form_simulador"):
-    c1, c2 = st.columns(2)
-    escenarios = c1.multiselect("Escenarios (se ejecutan en orden)", list(ESCENARIOS_SIMULADOR),
-                                default=["normal"], format_func=lambda e: ESCENARIOS_SIMULADOR[e])
-    estacion = c2.text_input("Estación", value=config.ESTACION)
-
-    c3, c4 = st.columns(2)
-    opciones_bulto = {b["bulto_id"]: b for b in bultos}
-    bulto_id = c3.selectbox("Bulto (define el peso esperado)", list(opciones_bulto),
-                            format_func=lambda b: f"{b} · {opciones_bulto[b]['descripcion']}")
-    escanear_antes = c4.checkbox("Escanear el bulto antes de simular (recepción completa)", value=True,
-                                 help="Crea la recepción como si el operador escaneara el QR. "
-                                      "Solo con un escenario, porque la ventana dura 20 s.")
-
-    c5, c6, c7, c8 = st.columns(4)
-    velocidad = c5.select_slider("Velocidad", options=[0.5, 1.0, 2.0, 4.0], value=1.0,
-                                 help="1.0 = tiempo real")
-    usar_ruido = c6.checkbox("Ruido manual")
-    ruido = c6.number_input("Ruido (g)", min_value=0.0, max_value=0.5, value=0.02, step=0.01)
-    usar_semilla = c7.checkbox("Semilla fija")
-    semilla = c7.number_input("Semilla", min_value=0, value=1, step=1)
-    pausa = c8.number_input("Pausa entre escenarios (s)", min_value=0.0, value=3.0, step=1.0)
-
-    enviar = st.form_submit_button("Ejecutar simulador", type="primary", icon=":material/play_arrow:")
-
-if enviar:
-    if not escenarios:
-        st.error("Elige al menos un escenario.")
-    elif escanear_antes and len(escenarios) > 1:
-        st.error("Para una recepción completa elige un solo escenario, o desmarca el escaneo.")
-    else:
-        try:
-            if escanear_antes:
-                r = api.escanear(bulto_id, estacion)
-                st.session_state.iot_recepcion = r["recepcion_id"]
-            api.lanzar_simulador(escenarios, opciones_bulto[bulto_id]["peso_kg"], estacion, velocidad,
-                                 ruido if usar_ruido else None, semilla if usar_semilla else None, pausa)
-        except api.ErrorAPI as e:
-            st.error(str(e))
-        else:
-            st.success(f"Simulador en marcha en {estacion}: {', '.join(escenarios)}.",
-                       icon=":material/sensors:")
 
 
 # ---------------- En vivo ----------------
@@ -88,59 +49,108 @@ def en_vivo():
         st.error(str(e))
         return
 
-    rid = st.session_state.get("iot_recepcion")
-    if rid:
-        rec = next((r for r in recepciones if r["id"] == rid), None)
-        if rec:
-            colores = {"OK": "green", "SOSPECHOSO": "red", "PENDIENTE": "gray"}
-            st.markdown(f"**Recepción {rid} ({rec['codigo']}):** "
-                        f":{colores[rec['estado']]}[{rec['estado']}]"
-                        + (f" · OT: {', '.join(rec['ots'])}" if rec["ots"] else ""))
-
-    st.subheader("Eventos en vivo")
     conteo = {t: sum(e["tipo"] == t for e in eventos) for t in TIPOS_EVENTO}
-    columnas = st.columns(6)
-    for col, (tipo, (nombre, _)) in zip(columnas, TIPOS_EVENTO.items()):
-        col.metric(nombre, conteo[tipo])
-    columnas[4].metric("Simulados", sum(e["origen"] == "simulado" for e in eventos))
-    columnas[5].metric("Físicos", sum(e["origen"] == "fisico" for e in eventos))
+    simulados = sum(e["origen"] == "simulado" for e in eventos)
+    fisicos = sum(e["origen"] == "fisico" for e in eventos)
+    kpis([
+        {"etiqueta": "Eventos de la sesión", "valor": len(eventos), "icono": "actividad", "acento": "azul",
+         "pie": f"{conteo['presencia']} presencias · {conteo['peso']} pesos"},
+        {"etiqueta": "Manipulación detectada", "valor": conteo["golpe"] + conteo["inclinacion"], "icono": "alerta",
+         "acento": "ambar", "pie": f"{conteo['golpe']} golpes · {conteo['inclinacion']} inclinaciones"},
+        {"etiqueta": "Origen", "valor": fisicos, "unidad": f"físicos / {simulados} simulados", "icono": "cpu",
+         "acento": "verde", "pie": "el contrato exige mostrarlo"},
+        {"etiqueta": "Recepciones de la sesión", "valor": len(recepciones), "icono": "caja", "acento": "violeta",
+         "pie": f"{sum(r['estado'] == 'OK' for r in recepciones)} correctas"},
+    ])
 
-    izq, der = st.columns([3, 2])
+    izq, der = st.columns([1.35, 1], gap="medium")
     with izq:
-        st.markdown("**Últimos 15 eventos**")
-        tabla_eventos(list(reversed(eventos))[:15], mostrar_estacion=True,
-                      vacio="Todavía no hay eventos. Ejecuta el simulador o conecta el ESP32.")
+        with tarjeta("stream"):
+            seccion("Flujo de eventos", "sensor", nota="últimos 12 · se actualiza cada 2 s")
+            linea_eventos(list(reversed(eventos)), mostrar_estacion=True, limite=12,
+                          vacio="Sin eventos todavía. Ejecuta el simulador o conecta el ESP32.")
     with der:
-        st.markdown("**Recepciones recientes**")
-        if recepciones:
-            st.dataframe(pd.DataFrame([{
-                "Id": r["id"], "Bulto": r["codigo"], "Estación": r["estacion"], "Estado": r["estado"],
-                "OT": len(r["ots"]), "Cerrada": hora(r.get("cerrada_ts")),
-            } for r in recepciones[:10]]), hide_index=True, width="stretch")
-        else:
-            st.caption("Sin recepciones todavía.")
+        with tarjeta("recepciones"):
+            seccion("Recepciones recientes", "caja")
+            if not recepciones:
+                html('<div class="kv-tenue">Sin recepciones en esta sesión.</div>')
+            for r in recepciones[:7]:
+                html(f'<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;'
+                     f'border-bottom:1px solid var(--kv-borde)"><span class="kv-mono">{escape(r["codigo"])}</span>'
+                     f'<span class="kv-tenue">{escape(r["estacion"])}</span>'
+                     f'<span style="margin-left:auto">{pildora(r["estado"].capitalize(), COLOR_ESTADO[r["estado"]], vivo=r["estado"] == "PENDIENTE")}</span>'
+                     f'<span class="kv-tenue kv-mono" style="width:62px;text-align:right">{hora(r.get("cerrada_ts") or r.get("ts"))}</span></div>')
 
 
 en_vivo()
 
+# ---------------- Histórico ----------------
+with tarjeta("historico"):
+    cab, sel = st.columns([2, 1.2])
+    with cab:
+        seccion("Eventos por tipo", "tendencia", nota="histórico simulado + sesión")
+    with sel:
+        rango = graficas.selector_rango("rango_iot")
+    try:
+        datos = api.obtener_series(rango)
+    except api.ErrorAPI as e:
+        st.info(f"El backend no ofrece series de tiempo: {e}")
+    else:
+        graficas.lineas_tiempo(datos["puntos"], [
+            ("presencia", "Presencia", "cian", "d"),
+            ("peso", "Peso", "azul", "d"),
+            ("golpe", "Golpe", "rojo", "d"),
+            ("inclinacion", "Inclinación", "ambar", "d"),
+        ], rango, unidad="eventos", alto=300, area=False, clave="iot_series")
+
+# ---------------- Simulador ----------------
+with tarjeta("form_sim"):
+    seccion("Simulador de la estación", "rayo", nota="simulador.py de la carpeta IoT")
+    with st.form("form_simulador", border=False):
+        c1, c2, c3 = st.columns([2, 1, 1.4])
+        escenarios = c1.multiselect("Escenarios (en orden)", list(ESCENARIOS_SIMULADOR), default=["normal"],
+                                    format_func=lambda e: ESCENARIOS_SIMULADOR[e])
+        estacion = c2.text_input("Estación", value=config.ESTACION)
+        opciones = {b["bulto_id"]: b for b in bultos}
+        bulto_id = c3.selectbox("Bulto (peso esperado)", list(opciones),
+                                format_func=lambda b: f"{b} · {opciones[b]['peso_kg']:.2f} kg")
+        c4, c5, c6, c7 = st.columns(4)
+        velocidad = c4.select_slider("Velocidad", options=[0.5, 1.0, 2.0, 4.0], value=1.0, help="1.0 = tiempo real")
+        ruido = c5.number_input("Ruido (g)", min_value=0.0, max_value=0.5, value=0.0, step=0.01,
+                                help="0 = el del escenario")
+        semilla = c6.number_input("Semilla", min_value=0, value=0, step=1, help="0 = aleatoria")
+        pausa = c7.number_input("Pausa (s)", min_value=0.0, value=3.0, step=1.0)
+        escanear_antes = st.toggle("Escanear el bulto antes (recepción completa, un solo escenario)", value=True)
+        enviar = st.form_submit_button("Ejecutar simulador", type="primary", icon=":material/play_arrow:")
+
+    if enviar:
+        if not escenarios:
+            st.error("Elige al menos un escenario.")
+        elif escanear_antes and len(escenarios) > 1:
+            st.error("Para una recepción completa elige un solo escenario, o desactiva el escaneo.")
+        else:
+            try:
+                if escanear_antes:
+                    api.escanear(bulto_id, estacion)
+                api.lanzar_simulador(escenarios, opciones[bulto_id]["peso_kg"], estacion, velocidad,
+                                     ruido or None, semilla or None, pausa)
+            except api.ErrorAPI as e:
+                st.error(str(e))
+            else:
+                st.toast(f"Simulando en {estacion}: {', '.join(escenarios)}", icon=":material/sensors:")
+
 # ---------------- Detector ----------------
-with st.expander("Parámetros del detector (los mismos que irán en el firmware del ESP32)",
-                 icon=":material/tune:"):
-    det = cargar_detector()
+det = cargar_detector()
+with st.expander("Parámetros del detector · los mismos que irán en el firmware del ESP32", icon=":material/tune:"):
     if det is None:
         st.caption("No se encontró detector.py en la carpeta IoT.")
     else:
         st.dataframe(pd.DataFrame([
-            {"Parámetro": "Umbral de presencia", "Valor": f"{det.UMBRAL_PRESENCIA_G} g",
-             "Uso": "Pico mínimo para decir que se colocó un bulto"},
-            {"Parámetro": "Umbral de golpe", "Valor": f"{det.UMBRAL_GOLPE_G} g",
-             "Uso": "Manipulación brusca"},
+            {"Parámetro": "Umbral de presencia", "Valor": f"{det.UMBRAL_PRESENCIA_G} g", "Uso": "Pico mínimo al colocar un bulto"},
+            {"Parámetro": "Umbral de golpe", "Valor": f"{det.UMBRAL_GOLPE_G} g", "Uso": "Manipulación brusca"},
             {"Parámetro": "Umbral de inclinación", "Valor": f"{det.UMBRAL_INCLINACION_DEG}°",
              "Uso": f"Sostenida {det.TIEMPO_INCLINACION_S} s, se rearma {det.HISTERESIS_DEG}° abajo"},
             {"Parámetro": "Anti-rebote", "Valor": f"{det.PAUSA_MIN_S} s", "Uso": "Pausa mínima entre eventos"},
             {"Parámetro": "Ventana de pico", "Valor": f"{det.VENTANA_PICO_S} s", "Uso": "Tiempo para medir el pico"},
-            {"Parámetro": "Promedio de ángulo", "Valor": f"{det.VENTANA_PROMEDIO} muestras",
-             "Uso": "Suaviza la inclinación"},
+            {"Parámetro": "Promedio de ángulo", "Valor": f"{det.VENTANA_PROMEDIO} muestras", "Uso": "Suaviza la inclinación"},
         ]), hide_index=True, width="stretch")
-        st.caption("Origen: " + ", ".join(NOMBRE_ORIGEN[o] for o in ("simulado", "fisico"))
-                   + ". El peso sigue simulado mientras no haya celda de carga.")

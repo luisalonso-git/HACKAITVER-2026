@@ -3,7 +3,8 @@ from pathlib import Path
 
 # Dirección del backend. Mientras no esté el de FastAPI, es el backend_mock
 # (python backend_mock/servidor_mock.py). Si corre en otra laptop, pon su IP.
-API_URL = "http://localhost:8000"
+# Usa 127.0.0.1 y no "localhost": en Windows, "localhost" prueba IPv6 primero y cada consulta tarda ~2 s más.
+API_URL = "http://127.0.0.1:8000"
 
 # Dirección de ESTE frontend vista desde el celular (IP de tu laptop en el hotspot).
 # Streamlit la muestra como "Network URL" al arrancar. Se usa para generar los QR.

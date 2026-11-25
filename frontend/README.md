@@ -1,6 +1,7 @@
 # Kardex Vivo · Frontend (Streamlit)
 
-Cinco pantallas: **Inicio**, **Recepción** (operador), **Estación IoT**, **Órdenes de trabajo** y **Dashboard**.
+Seis pantallas: **Resumen**, **Recepción** (operador), **Estación IoT**, **Datos** (motor de limpieza), **Órdenes de trabajo**
+y **Calidad de datos**, con tema oscuro morado tipo SaaS (tarjetas de vidrio), gráficas interactivas (Plotly) con rangos de 1 h, 24 h, 7 d y 30 d, y diseño adaptable a celular.
 Sigue el contrato del equipo: `Hackaton/CONTRATO.md` (secciones 1 a 5, más la 6 con lo que agrega el frontend).
 
 ## Arranque (dos terminales, desde la carpeta del repositorio)
@@ -16,7 +17,7 @@ cd frontend
 python -m streamlit run app.py
 ```
 
-Instalación, solo una vez: `python -m pip install -r frontend/requirements.txt`
+Instalación, solo una vez (incluye Plotly para las gráficas y reportlab para los PDF): `python -m pip install -r frontend/requirements.txt`
 
 ## Qué cubre de la carpeta IoT
 
@@ -64,7 +65,11 @@ En `config.py`, `API_URL = "http://IP-del-backend:8000"`. El backend debe respon
 | `app.py` | Menú y navegación |
 | `config.py` | URL del backend, IP del frontend, estación, ruta del simulador |
 | `api.py` | Única puerta hacia el backend y el simulador |
-| `componentes.py` | Chequeos y tabla de eventos que comparten las pantallas |
+| `estilo.py` | Sistema visual: paleta, CSS, iconos, tarjetas, indicadores, encabezados |
+| `graficas.py` | Gráficas Plotly con el tema: líneas, barras, dona, medidor y selector de rango |
+| `documentos.py` | PDF de la orden de trabajo (reportlab) y bandeja de OT en CSV para Excel |
+| `componentes.py` | Chequeos, línea de eventos y avisos de origen que comparten las pantallas |
+| `assets/` | Logo e icono |
 | `utils.py` | Nombres del contrato (tipos de OT, eventos, escenarios) |
 | `paginas/*.py` | Las pantallas |
 | `generar_qr.py` | QR con URL para la cámara del celular |

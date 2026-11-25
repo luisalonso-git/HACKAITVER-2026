@@ -121,7 +121,7 @@ Cada chequeo vale `OK`, `FALLO` o `PENDIENTE`. Recepción ciega: `peso_esperado_
 Reglas de cierre usadas en el mock:
 - Se correlaciona por la **hora en que el servidor recibe** cada mensaje (no por `ts`), para que no afecte si los relojes de las laptops difieren.
 - Una recepción se cierra al terminar la ventana (20 s) o antes, si ya hay `presencia` y `peso` y pasan 4 s sin eventos nuevos.
-- Un evento que ya usó una recepción no se cuenta en otra.
+- Un evento que ya usó una recepción no se cuenta en otra, y pertenece al escaneo más reciente de su estación (si se escanea otro bulto, la recepción anterior deja de recibir eventos y cierra con lo que tenga).
 - Sin lectura de peso = chequeo de peso fallido. Una recepción correcta suma la cantidad del bulto al inventario.
 
 **`GET /api/bultos`**: `[{"bulto_id", "oc", "sku", "descripcion", "cantidad", "peso_kg"}]`
@@ -136,3 +136,24 @@ Reglas de cierre usadas en el mock:
 ```
 
 **`GET /api/inventario`**: `[{"sku": "1001", "descripcion": "...", "existencia": 1700}]`
+
+**`GET /api/series?rango=1h|24h|7d|30d`** (para las gráficas con rango de tiempo):
+```json
+{"rango": "24h", "paso_s": 3600, "historico": "simulado",
+ "puntos": [{"t": "2026-11-25T12:15", "recepciones_ok": 2, "recepciones_sospechosas": 1,
+             "presencia": 3, "peso": 3, "golpe": 1, "inclinacion": 0,
+             "ot_creadas": 1, "ot_cerradas": 0, "calidad": 0.9544}],
+ "totales": {"recepciones": 21, "recepciones_ok": 15, "tasa_ok": 0.71, "eventos": 40, "ot_creadas": 7, "ot_cerradas": 2}}
+```
+Cubetas: 5 min (1h), 1 h (24h), 6 h (7d), 1 día (30d). En el mock, los 30 días previos son **historial simulado**
+(se declara en `historico`); la actividad real de la sesión se suma encima.
+
+**Motor de limpieza (datos del equipo):**
+- Las OT de datos usan los tipos `duplicado`, `dato_incompleto` y `cantidad_distinta`; su evidencia es
+  `{"tipo": "registro", "fuente": "compras.csv", "fila": 23, "id": "C021", "sku", "regla", "detalle", "impacto_mxn", "origen": "datos"}`.
+- Los hallazgos de tipo `formato` no abren OT: se corrigen solos y cuentan en `/api/calidad.hallazgos.formato`.
+- `/api/calidad` calcula "después" = registros sanos + corregidos solos + registros cuyas OT ya se cerraron.
+- Si se recibe correctamente un bulto cuya compra el motor marcó `sin_recepcion`, su OT se cierra sola y la
+  recepción trae `"resuelve": "OT-00xx"`.
+- `GET /api/datos`: calidad por archivo, hallazgos con su OT, evaluación contra la hoja de respuestas, compras pendientes y datos limpios.
+- `GET /api/datos/reporte`: reporte de errores en CSV para Excel (separador `;`).

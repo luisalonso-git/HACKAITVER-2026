@@ -1,4 +1,6 @@
 streamlit>=1.50
 pandas
 requests
+plotly>=5.20
+reportlab
 qrcode[pil]

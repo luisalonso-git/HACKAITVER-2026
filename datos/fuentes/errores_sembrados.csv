@@ -1,0 +1,24 @@
+archivo,id_registro,tipo_error,descripcion
+compras.csv,C011,duplicado_exacto,Fila repetida completa (aparece 2 veces)
+compras.csv,C013,duplicado_distinto_id,Mismo contenido que C004 con otro id
+compras.csv,C014,casi_duplicado,Igual a C001 pero con mayúsculas y espacios distintos
+compras.csv,C015,campo_vacio,Proveedor vacío
+compras.csv,C016,campo_vacio,Costo unitario vacío
+compras.csv,C017,valor_invalido,Costo unitario negativo
+compras.csv,C018,fecha_futura,Fecha 2027-03-15 posterior a hoy
+compras.csv,C019,formato_inconsistente,Fecha en dd/mm/aaaa y SKU en minúsculas
+compras.csv,C020,valor_invalido,Cantidad igual a 0
+compras.csv,C021,sin_recepcion,Compra sin entrada en almacén (faltante)
+almacen.csv,M005,diferencia_cantidad,"Compras C005 dice 20, almacén recibió 18"
+almacen.csv,M012,diferencia_cantidad,"Compras C012 dice 25, almacén recibió 20"
+almacen.csv,M013,campo_vacio,Ubicación vacía
+almacen.csv,M017,sku_huerfano,SKU-099 no existe en compras ni en inventario
+almacen.csv,M018,duplicado_distinto_id,Mismo contenido que M010 con otro id
+almacen.csv,M019,valor_invalido,Cantidad recibida negativa
+ordenes_trabajo.csv,OT004,duplicado_exacto,Fila repetida completa
+ordenes_trabajo.csv,OT007,campo_vacio,Estado vacío
+ordenes_trabajo.csv,OT009,campo_vacio,Cantidad vacía
+ordenes_trabajo.csv,OT010,valor_invalido,"Estado 'hecha' no válido (válidos: abierta, en_proceso, cerrada)"
+ordenes_trabajo.csv,OT011,sku_huerfano,SKU-077 no existe
+ordenes_trabajo.csv,OT012,valor_invalido,Cantidad negativa
+ordenes_trabajo.csv,OT013,duplicado_distinto_id,Mismo contenido que OT006 con otro id

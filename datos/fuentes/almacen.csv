@@ -1,0 +1,20 @@
+id_mov,fecha,sku,descripcion,cantidad_recibida,ubicacion
+M001,2026-11-02,SKU-001,Caja tornillería industrial M8,50,A-01
+M002,2026-11-02,SKU-002,Sensor inductivo NPN 12V,30,B-02
+M003,2026-11-03,SKU-003,Rollo cinta de empaque,60,C-01
+M004,2026-11-04,SKU-001,Caja tornillería industrial M8,40,A-01
+M005,2026-11-05,SKU-002,Sensor inductivo NPN 12V,18,B-02
+M006,2026-11-06,SKU-003,Rollo cinta de empaque,40,C-01
+M007,2026-11-09,SKU-004,Guantes de seguridad nitrilo,100,D-01
+M008,2026-11-10,SKU-001,Caja tornillería industrial M8,30,A-01
+M009,2026-11-11,SKU-002,Sensor inductivo NPN 12V,15,B-02
+M010,2026-11-12,SKU-003,Rollo cinta de empaque,50,C-01
+M011,2026-11-13,SKU-004,Guantes de seguridad nitrilo,80,D-01
+M012,2026-11-16,SKU-001,Caja tornillería industrial M8,20,A-01
+M013,2026-11-17,SKU-003,Rollo cinta de empaque,30,
+M014,2026-11-18,SKU-002,Sensor inductivo NPN 12V,10,B-02
+M015,2026-11-18,SKU-004,Guantes de seguridad nitrilo,50,D-01
+M016,2026-11-19,SKU-002,Sensor inductivo NPN 12V,12,B-02
+M017,2026-11-20,SKU-099,Material sin catálogo,25,Z-99
+M018,2026-11-12,SKU-003,Rollo cinta de empaque,50,C-01
+M019,2026-11-21,SKU-001,Caja tornillería industrial M8,-5,A-01

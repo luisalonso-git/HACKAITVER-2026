@@ -10,6 +10,7 @@ TIPOS_OT = {
     "cantidad_distinta": "Cantidad distinta",
     "dato_incompleto": "Dato incompleto",
     "inspeccion": "Inspección (manipulación)",
+    "formato": "Formato (corregido solo)",
 }
 ESTADOS_OT = ["abierta", "en_revision", "cerrada"]
 NOMBRE_ESTADO = {"abierta": "Abierta", "en_revision": "En revisión", "cerrada": "Cerrada"}
