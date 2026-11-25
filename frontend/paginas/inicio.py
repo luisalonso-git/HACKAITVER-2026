@@ -1,5 +1,6 @@
 import streamlit as st
 
+import api
 import config
 
 st.title("Kardex Vivo")
@@ -8,22 +9,34 @@ st.markdown(
     "con evidencia física de sensores IoT."
 )
 
-if config.USAR_MOCK:
-    st.warning("Modo simulado: los datos vienen de mock_api.py, no del backend.",
-               icon=":material/science:")
+if api.backend_activo():
+    st.success(f"Backend conectado en {config.API_URL}", icon=":material/cloud_done:")
 else:
-    st.success(f"Conectado al backend en {config.API_URL}", icon=":material/cloud_done:")
+    st.error(
+        f"No hay backend en {config.API_URL}. Abre otra terminal y corre "
+        "`python backend_mock/servidor_mock.py` desde la carpeta del repositorio.",
+        icon=":material/cloud_off:",
+    )
+
+if not config.RUTA_SIMULADOR.exists():
+    st.warning(f"No se encontró el simulador IoT en {config.RUTA_SIMULADOR}.", icon=":material/sensors_off:")
 
 st.subheader("Pantallas")
-c1, c2, c3 = st.columns(3)
-with c1.container(border=True):
-    st.page_link("paginas/recepcion.py", label="Recepción", icon=":material/qr_code_scanner:")
-    st.caption("El operador escanea el QR de la remisión y la estación valida QR, presencia y peso.")
-with c2.container(border=True):
-    st.page_link("paginas/ordenes.py", label="Órdenes de trabajo", icon=":material/assignment:")
-    st.caption("Hallazgos convertidos en OT: revisar, asignar y cerrar con resolución.")
-with c3.container(border=True):
-    st.page_link("paginas/dashboard.py", label="Dashboard", icon=":material/monitoring:")
-    st.caption("Calidad de datos antes y después, hallazgos e inventario en vivo.")
+fila1 = st.columns(2)
+fila2 = st.columns(2)
+tarjetas = [
+    (fila1[0], "paginas/recepcion.py", "Recepción", ":material/qr_code_scanner:",
+     "El operador escanea el QR del bulto y la estación valida QR, presencia, peso y manipulación."),
+    (fila1[1], "paginas/iot.py", "Estación IoT", ":material/sensors:",
+     "Eventos del MPU6050 y la báscula en vivo, simulador con sus 7 escenarios y parámetros del detector."),
+    (fila2[0], "paginas/ordenes.py", "Órdenes de trabajo", ":material/assignment:",
+     "Cada fallo se convierte en una OT: revisar, confirmar o descartar con comentario."),
+    (fila2[1], "paginas/dashboard.py", "Dashboard", ":material/monitoring:",
+     "Calidad de datos antes y después, hallazgos, recepciones e inventario en vivo."),
+]
+for columna, ruta, titulo, icono, texto in tarjetas:
+    with columna.container(border=True):
+        st.page_link(ruta, label=titulo, icon=icono)
+        st.caption(texto)
 
-st.caption(f"Estación: {config.ESTACION}")
+st.caption(f"Estación de esta pantalla: {config.ESTACION}")

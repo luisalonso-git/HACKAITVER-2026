@@ -3,10 +3,10 @@ import streamlit as st
 
 import api
 import config
-from utils import PRIORIDADES_OT, TIPOS_OT
+from utils import NOMBRE_ORIGEN, PRIORIDADES_OT, TIPOS_EVENTO, TIPOS_OT
 
 NOMBRE_FUENTE = {"compras": "Compras", "almacen": "Almacén", "costos": "Costos",
-                 "ot_operativas": "OT operativas"}
+                 "ot_operativas": "OT operativas", "recepciones": "Recepciones"}
 
 st.title("Calidad de datos")
 st.caption("Se actualiza cada 5 segundos.")
@@ -17,6 +17,7 @@ def tablero():
     try:
         calidad = api.obtener_calidad()
         ots = api.listar_ot()
+        eventos = api.listar_eventos()
         inventario = api.obtener_inventario()
     except api.ErrorAPI as e:
         st.error(str(e))
@@ -25,6 +26,7 @@ def tablero():
     g = calidad["global"]
     total = calidad["total_registros"]
     hallazgos = calidad["hallazgos"]
+    rec = calidad.get("recepciones", {})
     horas = total * config.MINUTOS_VALIDACION_MANUAL / 60
 
     c1, c2, c3, c4 = st.columns(4)
@@ -35,10 +37,17 @@ def tablero():
     c4.metric("Horas de validación manual evitadas", f"{horas:.1f} h", border=True,
               help=f"Estimado con {config.MINUTOS_VALIDACION_MANUAL} min por registro revisado a mano.")
 
+    r1, r2, r3, r4 = st.columns(4)
+    r1.metric("Recepciones validadas", rec.get("total", 0))
+    r2.metric("Correctas", rec.get("ok", 0))
+    r3.metric("Sospechosas", rec.get("sospechosas", 0))
+    r4.metric("En curso", rec.get("pendientes", 0))
+
     izq, der = st.columns(2)
     with izq:
         st.subheader("Calidad por fuente")
-        df = pd.DataFrame(calidad["por_fuente"])
+        fuentes = [f for f in calidad["por_fuente"] if f.get("antes") is not None]
+        df = pd.DataFrame(fuentes)
         df["fuente"] = df["fuente"].map(lambda f: NOMBRE_FUENTE.get(f, f))
         df = df.set_index("fuente")[["antes", "despues"]] * 100
         df.columns = ["Antes", "Después"]
@@ -54,16 +63,31 @@ def tablero():
     izq2, der2 = st.columns(2)
     with izq2:
         st.subheader("OT sin cerrar por prioridad")
-        abiertas = [o for o in ots if o["estado"] != "CERRADA"]
+        abiertas = [o for o in ots if o["estado"] != "cerrada"]
         dfp = pd.DataFrame(
-            {"OT": {p: sum(o["prioridad"] == p for o in abiertas) for p in PRIORIDADES_OT}}
+            {"OT": {p.capitalize(): sum(o["prioridad"] == p for o in abiertas) for p in PRIORIDADES_OT}}
         )
         st.bar_chart(dfp, x_label="", y_label="", color="#993C1D")
     with der2:
-        st.subheader("Inventario")
-        dfi = pd.DataFrame(inventario).rename(columns={
-            "articulo": "Artículo", "descripcion": "Descripción", "existencia": "Existencia"})
-        st.dataframe(dfi, hide_index=True, width="stretch")
+        st.subheader("Eventos IoT por origen")
+        if eventos:
+            conteo = {}
+            for e in eventos:
+                origen = NOMBRE_ORIGEN.get(e["origen"], e["origen"])
+                tipo = TIPOS_EVENTO.get(e["tipo"], (e["tipo"],))[0]
+                conteo.setdefault(tipo, {}).setdefault(origen, 0)
+                conteo[tipo][origen] += 1
+            dfo = pd.DataFrame(conteo).T.fillna(0)
+            st.bar_chart(dfo, x_label="", y_label="Eventos")
+            if any(e["origen"] == "simulado" for e in eventos):
+                st.caption(":orange[Hay datos de sensor simulados. El peso es simulado hasta tener celda de carga.]")
+        else:
+            st.caption("Todavía no hay eventos IoT.")
+
+    st.subheader("Inventario")
+    dfi = pd.DataFrame(inventario).rename(columns={
+        "sku": "SKU", "descripcion": "Descripción", "existencia": "Existencia"})
+    st.dataframe(dfi, hide_index=True, width="stretch")
 
 
 tablero()
