@@ -95,3 +95,44 @@ Endpoints: `GET /api/ot` · `PATCH /api/ot/{id}` con `{"estado": "cerrada", "com
 | Peso fuera de tolerancia | `cantidad_distinta` |
 | Fila con costo vacío, SKU inexistente, etc. | `dato_incompleto` |
 | `golpe` o `inclinacion` | `inspeccion` |
+
+## 6. Agregados para el frontend (propuesta v1.1, 25-nov 12:30)
+
+No cambian nada de las secciones 1 a 5; solo agregan respuestas y consultas que la pantalla necesita.
+Están implementados en `backend_mock/servidor_mock.py`, que sirve de referencia para el backend de FastAPI.
+
+**Respuesta de `POST /api/escaneo`** (201):
+```json
+{"ok": true, "recepcion_id": 3, "estado": "PENDIENTE", "qr_valido": true, "mensaje": "QR válido",
+ "bulto": {"bulto_id": "B-0001", "oc": "OC-1042", "sku": "1001", "descripcion": "Tornillo hexagonal M6x20 (caja)"}}
+```
+Si el código no existe, `bulto` es `null` y el chequeo de QR falla (OT `dato_incompleto`).
+
+**`GET /api/recepcion/{id}`** y **`GET /api/recepciones`** (la más reciente primero):
+```json
+{"id": 3, "codigo": "B-0001", "estacion": "E1", "ts": "...", "estado": "PENDIENTE | OK | SOSPECHOSO",
+ "mensaje": "QR válido", "bulto": {...},
+ "checks": {"qr": "OK", "presencia": "OK", "peso": "PENDIENTE", "manipulacion": "PENDIENTE"},
+ "peso_medido_kg": 12.66, "peso_esperado_kg": null, "diferencia_pct": null,
+ "eventos": [ ...eventos de la ventana... ], "ots": ["OT-0007"], "cerrada_ts": null}
+```
+Cada chequeo vale `OK`, `FALLO` o `PENDIENTE`. Recepción ciega: `peso_esperado_kg` y `bulto.cantidad` solo aparecen al cerrar.
+
+Reglas de cierre usadas en el mock:
+- Se correlaciona por la **hora en que el servidor recibe** cada mensaje (no por `ts`), para que no afecte si los relojes de las laptops difieren.
+- Una recepción se cierra al terminar la ventana (20 s) o antes, si ya hay `presencia` y `peso` y pasan 4 s sin eventos nuevos.
+- Un evento que ya usó una recepción no se cuenta en otra.
+- Sin lectura de peso = chequeo de peso fallido. Una recepción correcta suma la cantidad del bulto al inventario.
+
+**`GET /api/bultos`**: `[{"bulto_id", "oc", "sku", "descripcion", "cantidad", "peso_kg"}]`
+
+**`GET /api/calidad`** (valores entre 0 y 1):
+```json
+{"global": {"antes": 0.76, "despues": 0.95}, "total_registros": 1560,
+ "por_fuente": [{"fuente": "compras", "total": 420, "antes": 0.81, "despues": 0.97}],
+ "hallazgos": {"duplicado": 37, "dato_incompleto": 58, "cantidad_distinta": 24,
+               "sin_respaldo_fisico": 0, "inspeccion": 0},
+ "recepciones": {"total": 8, "ok": 2, "sospechosas": 6, "pendientes": 0}}
+```
+
+**`GET /api/inventario`**: `[{"sku": "1001", "descripcion": "...", "existencia": 1700}]`
