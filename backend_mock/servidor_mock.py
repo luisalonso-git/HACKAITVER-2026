@@ -1,7 +1,4 @@
-"""Backend de integración (de mentira) que implementa Hackaton/CONTRATO.md completo.
-
-Sirve para que el frontend, el simulador IoT y las reglas funcionen juntos mientras
-la persona 1 termina el backend real en FastAPI. Solo usa la librería estándar.
+"""Backend de integración.
 
   python servidor_mock.py                 (puerto 8000)
   python servidor_mock.py --puerto 8000 --silencio 4
@@ -28,7 +25,7 @@ import time
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-# ---------------- Parámetros (los afina la persona de datos y reglas) ----------------
+# ---------------- Parámetros ----------------
 VENTANA_ANTES_S = 5         # eventos recibidos hasta 5 s antes del escaneo
 VENTANA_DESPUES_S = 20      # y hasta 20 s después
 ESPERA_SILENCIO_S = 4       # si ya llegaron presencia y peso, cerrar tras 4 s sin eventos nuevos
@@ -40,7 +37,7 @@ ORIGENES = {"simulado", "fisico"}
 REQUERIDOS = ("estacion", "tipo", "magnitud", "ts", "origen")
 ESTADOS_OT = ("abierta", "en_revision", "cerrada")
 
-# ---------------- Datos: vienen del motor de limpieza (datos/motor_limpieza.py) ----------------
+# ---------------- Datos: ----------------
 import sys
 from pathlib import Path
 
@@ -50,7 +47,6 @@ from motor_limpieza import analizar, reporte_excel  # noqa: E402
 DATOS = analizar()
 
 # Compras que llegan a la estación IoT. B-0001 es C021, la compra que el motor detecta "sin recepción"
-# en los datos del equipo; las demás son compras nuevas para la demo (no están en compras.csv).
 EN_TRANSITO = [
     ("B-0001", "C021", "SKU-003", 45), ("B-0002", "C022", "SKU-001", 12), ("B-0003", "C023", "SKU-002", 20),
     ("B-0004", "C024", "SKU-004", 40), ("B-0005", "C025", "SKU-003", 10), ("B-0006", "C026", "SKU-001", 4),
@@ -319,7 +315,7 @@ def vista_datos():
     }
 
 
-# ---------------- Series de tiempo (rangos 1 h, 24 h, 7 d, 30 d) ----------------
+# ---------------- Series de tiempo ----------------
 RANGOS = {"1h": (3600, 300), "24h": (86400, 3600), "7d": (7 * 86400, 6 * 3600), "30d": (30 * 86400, 86400)}
 HISTORIA = []          # actividad simulada de los últimos 30 días, solo para las gráficas
 INICIO_SERVIDOR = time.time()

@@ -1,4 +1,4 @@
-"""Simulador de la estación IoT (MPU6050 + celda de carga) para la Fase 1.
+"""Simulador de la estación IoT (MPU6050 + celda de carga).
 
 Genera una señal de aceleración a 100 Hz, la pasa por el MISMO detector que irá
 en el ESP32 y envía los eventos al backend con el contrato de CONTRATO.md.

@@ -1,9 +1,5 @@
 """Puente MQTT → backend: recibe los eventos que publica el ESP32 (Wokwi o real) y los manda a /api/evento.
 
-Hace falta porque el ESP32 simulado en Wokwi (versión gratuita) sale a internet pero no puede llegar
-a tu laptop. El ESP32 publica en un broker MQTT público y este puente, que corre en tu laptop, reenvía
-cada evento al backend con el mismo JSON del contrato.
-
   python -m pip install paho-mqtt
   python firmware/puente_mqtt.py
   python firmware/puente_mqtt.py --api http://127.0.0.1:8000 --topico kardexvivo/hackaitver2026/eventos

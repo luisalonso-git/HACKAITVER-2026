@@ -10,7 +10,29 @@ Proyecto para el HackaITVER 2026, Área Mecatrónica e Industrial.
 
 Enlace temporal, activo solo durante la presentación del 25/11/2026 (túnel de Cloudflare hacia la
  laptop del equipo).
- 
+> **Importante:** este enlace solo funciona mientras la laptop del equipo tiene encendidos el backend,
+> el frontend y el túnel de Cloudflare. Fue activado para la presentación del 25/11/2026.
+> Si no abre, el sistema está apagado: se puede ejecutar localmente con las instrucciones de "Cómo ejecutarlo".
+
+### Cómo activarlo
+
+Abrir cuatro terminales en la carpeta del repositorio (en VS Code, con el botón **+** del panel de terminal):
+
+| Terminal | Comando | Para qué |
+|---|---|---|
+| 1 | `python backend_mock/servidor_mock.py` | Backend (obligatorio) |
+| 2 | `cd frontend` y luego `python -m streamlit run app.py` | Página web (obligatorio) |
+| 3 | `cloudflared tunnel --url http://localhost:8501` | Enlace público |
+| 4 | `python firmware/puente_mqtt.py` | Solo si se usa el ESP32 simulado en Wokwi |
+
+Las cuatro terminales deben quedar abiertas. El túnel genera un enlace nuevo
+(`https://…trycloudflare.com`) cada vez que se arranca: hay que actualizarlo en este README y en
+`FRONT_URL` de `frontend/config.py` para que los QR apunten a él.
+
+**Simulación del ESP32 en Wokwi:** https://wokwi.com/projects/481700114433886209
+
+Para que sus eventos lleguen al sistema, debe estar corriendo `python firmware/puente_mqtt.py` (ver `firmware/README.md`).
+
 ---
 
 ## El problema

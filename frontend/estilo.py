@@ -1,6 +1,4 @@
-"""Sistema visual de Kardex Vivo: paleta, CSS global, iconos y piezas HTML reutilizables.
-
-Todas las pantallas usan estas funciones para verse igual. Para cambiar un color,
+"""Todas las pantallas usan estas funciones para verse igual. Para cambiar un color,
 cámbialo en PALETA y en el bloque :root del CSS.
 """
 from html import escape

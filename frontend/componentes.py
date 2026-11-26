@@ -1,4 +1,3 @@
-"""Piezas visuales que comparten varias pantallas (chequeos, línea de eventos, origen)."""
 from html import escape
 
 from estilo import PALETA, html, icono, pildora

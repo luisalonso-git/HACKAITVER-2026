@@ -1,5 +1,5 @@
-"""Cliente del backend según Hackaton/CONTRATO.md.
-Las páginas solo llaman a estas funciones; si cambia una ruta o un campo, se corrige aquí."""
+"""Cliente del backend según Hackaton/CONTRATO.md."""
+
 import subprocess
 import sys
 from datetime import datetime
@@ -35,7 +35,7 @@ def _ahora():
     return datetime.now().isoformat(timespec="milliseconds")
 
 
-# ---- Contrato, sección 2: escaneo ----
+# ---- sección 2: escaneo ----
 def escanear(codigo, estacion=None):
     return _llamar("POST", "/api/escaneo", json={
         "codigo": codigo.strip().upper(),
@@ -52,12 +52,12 @@ def listar_recepciones():
     return _llamar("GET", "/api/recepciones")
 
 
-# ---- Contrato, sección 1: eventos IoT ----
+# ---- sección 1: eventos IoT ----
 def listar_eventos():
     return _llamar("GET", "/api/eventos")
 
 
-# ---- Contrato, sección 4: órdenes de trabajo ----
+# ---- sección 4: órdenes de trabajo ----
 def listar_ot():
     return _llamar("GET", "/api/ot")
 
@@ -66,7 +66,7 @@ def actualizar_ot(ot_id, estado, comentario=None):
     return _llamar("PATCH", f"/api/ot/{ot_id}", json={"estado": estado, "comentario": comentario})
 
 
-# ---- Agregados para el frontend (CONTRATO.md, sección 6) ----
+# ---- Agregados para el frontend ----
 def listar_bultos():
     return _llamar("GET", "/api/bultos")
 
