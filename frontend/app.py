@@ -6,7 +6,7 @@ from estilo import aplicar_estilo
 
 RAIZ = Path(__file__).parent
 
-st.set_page_config(page_title="Kardex Vivo", page_icon=str(RAIZ / "assets" / "icono.svg"), layout="wide",
+st.set_page_config(page_title="VigiaIoT", page_icon=str(RAIZ / "assets" / "icono.svg"), layout="wide",
                    initial_sidebar_state="expanded")
 st.logo(str(RAIZ / "assets" / "logo.svg"), icon_image=str(RAIZ / "assets" / "icono.svg"), size="large")
 aplicar_estilo()

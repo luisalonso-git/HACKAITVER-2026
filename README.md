@@ -4,6 +4,13 @@
 
 Proyecto para el HackaITVER 2026, Área Mecatrónica e Industrial.
 
+## Demo en vivo
+
+**https://portal-directive-biblical-fin.trycloudflare.com**
+
+Enlace temporal, activo solo durante la presentación del 25/11/2026 (túnel de Cloudflare hacia la
+ laptop del equipo).
+ 
 ---
 
 ## El problema

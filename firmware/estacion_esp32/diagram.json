@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "author": "Kardex Vivo · HackaITVER 2026",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "imu", "top": -120, "left": 180, "attrs": {} },
+    { "type": "wokwi-hx711", "id": "bascula", "top": 160, "left": 190, "attrs": { "type": "50kg" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "imu:VCC", "esp:3V3", "red", [] ],
+    [ "imu:GND", "esp:GND.2", "black", [] ],
+    [ "imu:SDA", "esp:21", "green", [] ],
+    [ "imu:SCL", "esp:22", "blue", [] ],
+    [ "bascula:VCC", "esp:5V", "red", [] ],
+    [ "bascula:GND", "esp:GND.1", "black", [] ],
+    [ "bascula:DT", "esp:4", "green", [] ],
+    [ "bascula:SCK", "esp:5", "blue", [] ]
+  ],
+  "dependencies": {}
+}

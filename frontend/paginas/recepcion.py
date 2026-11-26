@@ -5,6 +5,7 @@ import streamlit as st
 
 import api
 import documentos
+import lector_qr
 import config
 from componentes import aviso_origen, estado_conexion, linea_eventos, mostrar_checks
 from estilo import banner, encabezado, html, kpis, pasos, pildora, seccion, tarjeta
@@ -17,7 +18,21 @@ LLAVES_SESION = ["rec_id", "rec_codigo", "rec_inicio", "rec_bulto", "rec_final",
 def reiniciar():
     for llave in LLAVES_SESION:
         st.session_state.pop(llave, None)
+    st.session_state.cam_n = st.session_state.get("cam_n", 0) + 1  # cámara nueva, sin la foto anterior
     st.query_params.clear()
+
+
+def iniciar(codigo):
+    try:
+        respuesta = api.escanear(codigo)
+    except api.ErrorAPI as e:
+        st.error(str(e))
+        return
+    st.session_state.rec_id = respuesta["recepcion_id"]
+    st.session_state.rec_codigo = codigo
+    st.session_state.rec_inicio = time.time()
+    st.session_state.rec_bulto = respuesta.get("bulto")
+    st.rerun()
 
 
 def peso_esperado(codigo):
@@ -169,23 +184,36 @@ with principal:
         pasos(PASOS, 0)
         with tarjeta("escaneo"):
             seccion("Escanear QR del bulto", "qr")
-            codigo = st.text_input("Código del bulto", value=st.query_params.get("qr", ""), placeholder="B-0001",
-                                   label_visibility="collapsed").strip().upper()
-            st.caption("Con la cámara del celular el código se llena solo. También puedes escribirlo.")
-            if codigo and not codigo_valido(codigo):
-                st.error("Formato no válido: B- y 4 dígitos, por ejemplo B-0001.")
-            elif st.button("Iniciar recepción", type="primary", width="stretch", disabled=not codigo,
-                           icon=":material/arrow_forward:"):
-                try:
-                    respuesta = api.escanear(codigo)
-                except api.ErrorAPI as e:
-                    st.error(str(e))
+            modo = st.segmented_control("Modo", ["Cámara", "Código o lector"], default="Cámara",
+                                        key="modo_escaneo", label_visibility="collapsed")
+            if modo == "Cámara":
+                if not lector_qr.HAY_LECTOR:
+                    st.warning("Para leer QR con la cámara instala OpenCV: "
+                               "`python -m pip install opencv-python-headless`", icon=":material/photo_camera:")
                 else:
-                    st.session_state.rec_id = respuesta["recepcion_id"]
-                    st.session_state.rec_codigo = codigo
-                    st.session_state.rec_inicio = time.time()
-                    st.session_state.rec_bulto = respuesta.get("bulto")
-                    st.rerun()
+                    foto = st.camera_input("Apunta la cámara al QR del bulto", key=f"camara_{st.session_state.get('cam_n', 0)}",
+                                           label_visibility="collapsed")
+                    st.caption("Muestra la etiqueta a la cámara y pulsa el botón de captura. La recepción inicia sola.")
+                    if foto is not None:
+                        leido = lector_qr.leer_qr(foto.getvalue())
+                        if leido is None:
+                            st.warning("No se encontró un QR legible. Acércalo, evita reflejos y vuelve a capturar.",
+                                       icon=":material/qr_code_2:")
+                        elif not codigo_valido(leido):
+                            st.error(f"El QR dice '{leido}', que no es un código de bulto (B- y 4 dígitos).")
+                        else:
+                            st.success(f"QR leído: {leido}", icon=":material/check_circle:")
+                            iniciar(leido)
+            else:
+                codigo = st.text_input("Código del bulto", value=st.query_params.get("qr", ""), placeholder="B-0001",
+                                       label_visibility="collapsed").strip().upper()
+                st.caption("Escríbelo o usa un lector USB de códigos (escribe solo). "
+                           "Con la cámara del celular, el QR abre esta pantalla con el código ya cargado.")
+                if codigo and not codigo_valido(codigo):
+                    st.error("Formato no válido: B- y 4 dígitos, por ejemplo B-0001.")
+                elif st.button("Iniciar recepción", type="primary", width="stretch", disabled=not codigo,
+                               icon=":material/arrow_forward:"):
+                    iniciar(codigo)
     elif "rec_final" in st.session_state:
         mostrar_resultado(st.session_state.rec_final)
     else:
@@ -203,3 +231,15 @@ with lateral:
                  '1. Escanea el QR del bulto.<br>2. Colócalo en la báscula de la estación.<br>'
                  '3. Los sensores validan QR, presencia, peso y manipulación.<br>'
                  '4. Si algo no cuadra, se abre una orden de trabajo.</div>')
+        with tarjeta("etiquetas"):
+            seccion("Etiquetas QR", "qr")
+            if documentos.HAY_PDF:
+                try:
+                    hoja = documentos.etiquetas_qr_pdf(api.listar_bultos(), config.FRONT_URL)
+                except (api.ErrorAPI, RuntimeError):
+                    hoja = None
+                st.download_button("Descargar etiquetas (PDF)", data=hoja or b"", file_name="etiquetas_qr.pdf",
+                                   mime="application/pdf", icon=":material/qr_code_2:", width="stretch",
+                                   disabled=hoja is None)
+                st.caption("Imprímelas o ábrelas en otra pantalla. Para que el celular abra esta página, "
+                           f"FRONT_URL en config.py debe ser la IP de esta laptop (ahora: {config.FRONT_URL}).")

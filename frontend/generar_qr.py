@@ -1,48 +1,39 @@
-"""Genera los QR de los bultos en la carpeta qr/.
-Cada QR contiene una URL: al escanearlo con la cámara del celular se abre la pantalla
-de recepción con el código del bulto ya cargado. Antes de correrlo, ajusta FRONT_URL en config.py.
+"""Genera las etiquetas QR de los bultos en la carpeta qr/.
 
-Uso:  python generar_qr.py
+- qr/etiquetas_qr.pdf: hoja lista para imprimir (o abrir en otra pantalla), con todos los bultos.
+- qr/B-000X.png: una imagen por bulto (solo si está instalado qrcode).
+
+Cada QR lleva la URL de Recepción con el código: con la cámara del celular abre la pantalla con el código
+cargado; con la cámara de la laptop (modo Cámara de Recepción) se lee el código de la URL.
+Antes de correrlo, pon en config.py FRONT_URL = la "Network URL" que muestra Streamlit.
+
+Uso:  python generar_qr.py      (con el backend encendido)
 """
 from pathlib import Path
 
-import qrcode
-from PIL import Image, ImageDraw, ImageFont
-
 import api
 import config
-
-try:
-    BULTOS = [(b["bulto_id"], b["descripcion"]) for b in api.listar_bultos()]
-    print("Bultos tomados del backend.")
-except api.ErrorAPI:
-    print("Backend apagado: uso la lista de respaldo.")
-    BULTOS = [(f"B-000{i}", "") for i in range(1, 7)]
-BULTOS.append(("B-9999", "No existe en la base (demo de dato incompleto)"))
+import documentos
 
 carpeta = Path(__file__).parent / "qr"
 carpeta.mkdir(exist_ok=True)
 
 try:
-    fuente = ImageFont.load_default(size=20)
-except TypeError:  # Pillow antiguo
-    fuente = ImageFont.load_default()
+    bultos = api.listar_bultos()
+except api.ErrorAPI as e:
+    raise SystemExit(f"Enciende el backend primero: {e}")
+bultos.append({"bulto_id": "B-9999", "oc": "—", "sku": "—", "descripcion": "No existe en la base (prueba de error)"})
 
-for codigo, descripcion in BULTOS:
-    url = f"{config.FRONT_URL}/recepcion?qr={codigo}"
-    qr = qrcode.QRCode(box_size=10, border=4)
-    qr.add_data(url)
-    qr.make(fit=True)
-    imagen = qr.make_image(fill_color="black", back_color="white").get_image().convert("RGB")
+(carpeta / "etiquetas_qr.pdf").write_bytes(documentos.etiquetas_qr_pdf(bultos, config.FRONT_URL))
+print(f"Hoja de etiquetas: {carpeta / 'etiquetas_qr.pdf'}")
 
-    lienzo = Image.new("RGB", (imagen.width, imagen.height + 70), "white")
-    lienzo.paste(imagen, (0, 0))
-    dibujo = ImageDraw.Draw(lienzo)
-    dibujo.text((20, imagen.height), codigo, fill="black", font=fuente)
-    dibujo.text((20, imagen.height + 30), descripcion[:40], fill="black", font=fuente)
-
-    archivo = carpeta / f"{codigo}.png"
-    lienzo.save(archivo)
-    print(f"{archivo.name}  ->  {url}")
-
-print(f"\nListo: {len(BULTOS)} QR en {carpeta}")
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
+if qrcode:
+    for b in bultos:
+        url = f"{config.FRONT_URL}/recepcion?qr={b['bulto_id']}"
+        qrcode.make(url).save(carpeta / f"{b['bulto_id']}.png")
+        print(f"{b['bulto_id']}.png  ->  {url}")
+print(f"\nURL usada: {config.FRONT_URL}/recepcion?qr=...  (cámbiala en config.py si no es la IP de tu laptop)")

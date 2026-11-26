@@ -184,3 +184,56 @@ def csv_bandeja(ots):
                     NOMBRE_ORIGEN.get(origen_de_ot(o), ""), o.get("bulto_id") or "", o.get("estacion") or "",
                     o["causa"], _fecha(o.get("creada_ts")), _fecha(o.get("cerrada_ts")), o.get("comentario") or ""])
     return ("﻿" + salida.getvalue()).encode("utf-8")
+
+
+def etiquetas_qr_pdf(bultos, front_url):
+    """Hoja de etiquetas con el QR de cada bulto. El QR lleva la URL de Recepción: con la cámara del
+    celular abre la pantalla con el código cargado, y la cámara de la laptop lee el código de la URL."""
+    if not HAY_PDF:
+        raise RuntimeError("Falta reportlab: python -m pip install reportlab")
+    from reportlab.graphics import renderPDF
+    from reportlab.graphics.barcode import qr
+    from reportlab.graphics.shapes import Drawing
+    from reportlab.pdfgen import canvas as lienzo
+
+    buf = io.BytesIO()
+    c = lienzo.Canvas(buf, pagesize=letter)
+    ancho, alto = letter
+    c.setTitle("Etiquetas QR · Kardex Vivo")
+    columnas, filas = 2, 3
+    margen = 14 * mm
+    celda_w = (ancho - 2 * margen) / columnas
+    celda_h = (alto - 2 * margen - 12 * mm) / filas
+    lado = 44 * mm
+    for i, b in enumerate(bultos):
+        if i and i % (columnas * filas) == 0:
+            c.showPage()
+        pos = i % (columnas * filas)
+        if pos == 0:
+            c.setFillColor(colors.HexColor(VIOLETA))
+            c.setFont("Helvetica-Bold", 13)
+            c.drawString(margen, alto - margen, "Kardex Vivo · Etiquetas de recepción")
+            c.setFillColor(colors.HexColor(GRIS))
+            c.setFont("Helvetica", 8.5)
+            c.drawRightString(ancho - margen, alto - margen, "Escanea en Recepción: cámara de la laptop o del celular")
+        x = margen + (pos % columnas) * celda_w
+        y = alto - margen - 12 * mm - (pos // columnas + 1) * celda_h
+        c.setStrokeColor(colors.HexColor(LINEA))
+        c.setDash(3, 3)
+        c.roundRect(x + 3 * mm, y + 3 * mm, celda_w - 6 * mm, celda_h - 6 * mm, 4 * mm, stroke=1, fill=0)
+        c.setDash()
+        url = f"{front_url.rstrip('/')}/recepcion?qr={b['bulto_id']}"
+        codigo = qr.QrCodeWidget(url, barLevel="M")
+        x0, y0, x1, y1 = codigo.getBounds()
+        dibujo = Drawing(lado, lado, transform=[lado / (x1 - x0), 0, 0, lado / (y1 - y0), 0, 0])
+        dibujo.add(codigo)
+        renderPDF.draw(dibujo, c, x + (celda_w - lado) / 2, y + celda_h - lado - 7 * mm)
+        c.setFillColor(colors.HexColor(TINTA))
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(x + celda_w / 2, y + 20 * mm, b["bulto_id"])
+        c.setFont("Helvetica", 9)
+        c.setFillColor(colors.HexColor(GRIS))
+        c.drawCentredString(x + celda_w / 2, y + 14.5 * mm, f"Compra {b.get('oc', '')} · SKU {b.get('sku', '')}")
+        c.drawCentredString(x + celda_w / 2, y + 10 * mm, (b.get("descripcion") or "")[:48])
+    c.save()
+    return buf.getvalue()

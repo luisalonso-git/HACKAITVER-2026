@@ -37,6 +37,8 @@ def linea_eventos(eventos, mostrar_estacion=False, vacio="Esperando eventos de l
                     if mostrar_estacion else "")
         origen = e.get("origen", "")
         etiqueta_origen = pildora(NOMBRE_ORIGEN.get(origen, origen), "ambar" if origen == "simulado" else "verde")
+        if e.get("dispositivo"):
+            etiqueta_origen += pildora(e["dispositivo"], "azul")
         filas.append(
             f'<div class="kv-evento" style="--kv-color:{tono}">'
             f'<span class="kv-hora">{hora(e.get("ts"))}</span>{estacion}'
